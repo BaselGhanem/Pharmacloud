@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة - PharmaCloud</title>
+    <style>
+        /* --- التصميم والمتغيرات (نفس الهوية البصرية) --- */
+        :root {
+            --bg-color: #f4f7f6;
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-color: #007aff;
+            --danger-color: #ff3b30;
+            --success-color: #34c759;
+            --warning-color: #ff9500;
+            --glass-blur: blur(20px);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1c1c1e;
+                --surface-color: rgba(44, 44, 46, 0.85);
+                --border-color: rgba(255, 255, 255, 0.1);
+                --text-primary: #f5f5f7;
+                --text-secondary: #a1a1a6;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-primary); height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- القائمة الجانبية --- */
+        .sidebar { width: 80px; background: var(--surface-color); backdrop-filter: var(--glass-blur); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 20px 0; z-index: 10; justify-content: space-between;}
+        .nav-group { display: flex; flex-direction: column; width: 100%; align-items: center;}
+        .nav-item { width: 50px; height: 50px; border-radius: 14px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; background: transparent; border: none; font-size: 22px; color: var(--text-primary); }
+        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: white; }
+        .logout-btn { color: var(--danger-color); }
+
+        /* --- الحاوية الرئيسية --- */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .admin-badge { background: var(--warning-color); color: white; padding: 6px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+
+        /* --- بطاقات المؤشرات (KPI Cards) --- */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .kpi-card { background: var(--surface-color); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s; }
+        .kpi-card:hover { transform: translateY(-5px); }
+        .kpi-title { font-size: 15px; color: var(--text-secondary); font-weight: 600; }
+        .kpi-value { font-size: 32px; font-weight: 800; color: var(--accent-color); }
+        .kpi-value.success { color: var(--success-color); }
+        .kpi-value.warning { color: var(--warning-color); }
+
+        /* --- الجداول (Tables) --- */
+        .table-container { background: var(--surface-color); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); border-radius: 20px; padding: 25px; box-shadow: var(--shadow); }
+        .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-action { background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-action:hover { opacity: 0.9; }
+
+        table { width: 100%; border-collapse: collapse; text-align: right; }
+        th, td { padding: 15px; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-secondary); font-weight: 600; font-size: 14px; }
+        td { font-size: 15px; }
+        tr:hover { background: rgba(0, 0, 0, 0.02); }
+        .debt-amount { color: var(--danger-color); font-weight: bold; }
+        
+        .loader { width: 40px; height: 40px; border: 4px solid rgba(0,122,255,0.3); border-radius: 50%; border-top-color: var(--accent-color); animation: spin 1s linear infinite; margin: 50px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="nav-group">
+            <button class="nav-item active" title="لوحة التحكم">📊</button>
+            <button class="nav-item" title="نقطة البيع" onclick="window.location.href='pos.html'">🛒</button>
+            <button class="nav-item" title="الشركات (قريباً)">🏢</button>
+        </div>
+        <button class="nav-item logout-btn" onclick="logout()" title="تسجيل خروج">🚪</button>
+    </nav>
+
+    <main class="main-content">
+        
+        <header class="header">
+            <div>
+                <h1 style="font-size: 28px; margin-bottom: 5px;">لوحة الإدارة والمطالبات</h1>
+                <p style="color: var(--text-secondary);">نظرة عامة على أداء الصيدلية والذمم المالية</p>
+            </div>
+            <div class="admin-badge" id="adminNameDisplay">المدير: تحميل...</div>
+        </header>
+
+        <div id="mainLoader" class="loader"></div>
+
+        <div id="dashboardContent" style="display: none;">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-title">المبيعات النقدية (الكاش والفيزا)</span>
+                    <span class="kpi-value success" id="totalCashDisplay">0.00 د.أ</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">إجمالي الذمم (مطلوب من التأمين)</span>
+                    <span class="kpi-value warning" id="totalDebtDisplay">0.00 د.أ</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">إجمالي المبيعات (الشامل)</span>
+                    <span class="kpi-value" id="totalSalesDisplay">0.00 د.أ</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>كشف فواتير التأمين الطبي (المطالبات)</h2>
+                    <button class="btn-action" onclick="printClaims()">🖨️ طباعة الكشف</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>التاريخ والوقت</th>
+                                <th>الشركة</th>
+                                <th>رقم المؤمن عليه</th>
+                                <th>قيمة الفاتورة</th>
+                                <th>تحمل المريض (دفع)</th>
+                                <th>المطلوب من الشركة (ذمة)</th>
+                                <th>الكاشير</th>
+                            </tr>
+                        </thead>
+                        <tbody id="insuranceTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // 1. التحقق من الجلسة والصلاحية (ADMIN فقط)
+        const sessionStr = sessionStorage.getItem('pharmacy_session');
+        if (!sessionStr) window.location.href = 'login.html';
+        const sessionData = JSON.parse(sessionStr);
+        
+        if (sessionData.role !== 'ADMIN') {
+            alert("غير مصرح لك بالدخول إلى هذه الصفحة!");
+            window.location.href = 'pos.html';
+        }
+        
+        document.getElementById('adminNameDisplay').textContent = `المدير: ${sessionData.name}`;
+
+        // 2. إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP6FlbjAeUqut_79qW0T3rPSvfsjPdHfA",
+            authDomain: "gen-lang-client-0023266031.firebaseapp.com",
+            projectId: "gen-lang-client-0023266031",
+            storageBucket: "gen-lang-client-0023266031.firebasestorage.app",
+            messagingSenderId: "1052398695491",
+            appId: "1:1052398695491:web:1c29151c816929cdc510f6"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2f881b3f-5867-4dfd-b360-c85f26c6ded4");
+        const auth = getAuth(app);
+
+        // 3. جلب البيانات من قاعدة البيانات
+        async function loadDashboardData() {
+            try {
+                // جلب المبيعات
+                const salesRef = collection(db, "sales");
+                // لغايات العرض السريع سنجلب جميع الفواتير (في الأنظمة الكبيرة نستخدم where للفلترة بالتاريخ)
+                const q = query(salesRef, orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                let totalCash = 0;
+                let totalDebt = 0;
+                let totalSales = 0;
+                
+                const tableBody = document.getElementById('insuranceTableBody');
+                tableBody.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const sale = doc.data();
+                    
+                    // حسابات الـ KPIs
+                    totalSales += sale.totalInvoiceAmount || 0;
+                    totalCash += sale.amountPaidByPatient || 0;
+                    
+                    if (sale.isInsurance && sale.insuranceDetails) {
+                        totalDebt += sale.insuranceDetails.debtAmount || 0;
+                        
+                        // تنسيق التاريخ
+                        const dateObj = sale.timestamp ? sale.timestamp.toDate() : new Date();
+                        const dateStr = dateObj.toLocaleDateString('ar-JO') + ' ' + dateObj.toLocaleTimeString('ar-JO');
+
+                        // إضافة الصف لجدول المطالبات
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td>${dateStr}</td>
+                                <td><strong>${sale.insuranceDetails.companyName}</strong></td>
+                                <td>${sale.insuranceDetails.memberNumber}</td>
+                                <td>${sale.totalInvoiceAmount.toFixed(2)}</td>
+                                <td>${sale.amountPaidByPatient.toFixed(2)}</td>
+                                <td class="debt-amount">${sale.insuranceDetails.debtAmount.toFixed(2)}</td>
+                                <td><small>${sale.cashierName}</small></td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                // تحديث الشاشة
+                document.getElementById('totalSalesDisplay').textContent = totalSales.toFixed(2) + ' د.أ';
+                document.getElementById('totalCashDisplay').textContent = totalCash.toFixed(2) + ' د.أ';
+                document.getElementById('totalDebtDisplay').textContent = totalDebt.toFixed(2) + ' د.أ';
+
+                // إخفاء التحميل وإظهار المحتوى
+                document.getElementById('mainLoader').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+
+            } catch (error) {
+                console.error("خطأ في جلب البيانات:", error);
+                alert("حدث خطأ أثناء جلب البيانات، تأكد من صلاحيات قاعدة البيانات.");
+            }
+        }
+
+        // 4. التحقق من المصادقة ثم التحميل
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadDashboardData();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // 5. وظيفة الطباعة البسيطة
+        window.printClaims = function() {
+            window.print();
+        }
+
+        // 6. تسجيل الخروج
+        window.logout = function() { 
+            sessionStorage.removeItem('pharmacy_session'); 
+            auth.signOut().then(() => { window.location.href = 'login.html'; });
+        }
+    </script>
+</body>
+</html>
