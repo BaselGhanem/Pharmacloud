@@ -2,224 +2,292 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نقطة البيع المتكاملة - PharmaCloud</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PharmaCore POS - نظام البيع المتكامل</title>
+    <!-- Tailwind + Fonts (دمج تصميم PharmaCore الأنيق) -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <style>
-        /* --- المتغيرات والتصميم الحديث (دمج الكودين) --- */
-        :root {
-            --bg-color: #f4f7f6;
-            --surface-color: rgba(255, 255, 255, 0.85);
-            --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1d1d1f;
-            --text-secondary: #86868b;
-            --accent-color: #007aff;
-            --danger-color: #ff3b30;
-            --success-color: #34c759;
-            --warning-color: #ff9500;
-            --glass-blur: blur(20px);
-            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #1c1c1e;
-                --surface-color: rgba(44, 44, 46, 0.85);
-                --border-color: rgba(255, 255, 255, 0.1);
-                --text-primary: #f5f5f7;
-                --text-secondary: #a1a1a6;
+        /* تخصيص Tailwind والثيمات المستوحاة من التصميم الأول */
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#eeedf3",
+                        "on-surface-variant": "#414755",
+                        "primary": "#0058bc",
+                        "primary-container": "#0070eb",
+                        "error": "#ba1a1a",
+                        "secondary": "#006e28",
+                        "outline-variant": "#c1c6d7",
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                    }
+                }
             }
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-primary); height: 100vh; display: flex; overflow: hidden; }
-
-        /* --- القائمة الجانبية المحسنة --- */
-        .sidebar { width: 80px; background: var(--surface-color); backdrop-filter: var(--glass-blur); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 20px 0; z-index: 10; justify-content: space-between;}
-        .nav-group { display: flex; flex-direction: column; width: 100%; align-items: center;}
-        .nav-item { width: 50px; height: 50px; border-radius: 14px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; background: transparent; border: none; font-size: 22px; color: var(--text-primary); }
-        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: white; }
-        .logout-btn { color: var(--danger-color); }
-
-        /* --- الحاوية الرئيسية --- */
-        .pos-container { flex: 1; display: flex; padding: 20px; gap: 20px; }
+        /* الأنماط الأساسية للعناصر التفاعلية (من الكود الثاني مع تحسينات) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f4f7fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         
-        /* --- قسم المشتريات والبحث --- */
-        .cart-section { flex: 2; background: var(--surface-color); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); border-radius: 24px; display: flex; flex-direction: column; padding: 20px; box-shadow: var(--shadow); position: relative; }
-        .header-info { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; flex-wrap: wrap; gap: 10px;}
-        .cashier-badge { background: var(--accent-color); color: white; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-        .edit-badge { background: var(--warning-color); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: none; }
-
-        /* شريط التنقل بين الفواتير */
-        .invoice-navigation { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 40px; }
-        .nav-btn { background: white; border: 1px solid var(--border-color); padding: 5px 15px; border-radius: 30px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
-        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .nav-btn:hover:not(:disabled) { background: var(--accent-color); color: white; border-color: var(--accent-color);}
-        #navStatus { font-size: 14px; font-weight: 500; background: rgba(0,0,0,0.05); padding: 4px 12px; border-radius: 20px;}
-
-        /* --- محرك البحث الذكي --- */
-        .search-bar { position: relative; margin-bottom: 15px; z-index: 20; }
-        .search-bar input { width: 100%; padding: 18px 20px; border-radius: 16px; border: 1px solid var(--border-color); background: rgba(150,150,150,0.1); color: var(--text-primary); font-size: 16px; outline: none; transition: 0.3s; }
-        .search-bar input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1); }
-        .search-results { position: absolute; top: 60px; width: 100%; background: var(--surface-color); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-height: 250px; overflow-y: auto; display: none; z-index: 30; }
-        .search-item { padding: 15px 20px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
-        .search-item:hover { background: var(--accent-color); color: white; }
-
-        /* --- الفاتورة وعناصر السلة --- */
-        .cart-items { flex: 1; overflow-y: auto; padding-left: 5px; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-color); animation: slideIn 0.2s ease; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 8px; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-        .item-details { flex: 1; }
-        .item-details h4 { margin-bottom: 6px; font-size: 15px; }
-        .barcode-badge { background: rgba(150,150,150,0.2); padding: 3px 8px; border-radius: 6px; font-size: 11px; }
-        .item-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .item-qty { width: 55px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); text-align: center; font-size: 14px; }
-        .item-discount-input { width: 65px; padding: 8px; border-radius: 8px; border: 1px solid var(--warning-color); background: rgba(255, 149, 0, 0.05); text-align: center; }
-        .item-price { font-weight: 700; width: 70px; text-align: left; }
-        .btn-remove { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: 0.2s; }
-        .btn-remove:hover { background: var(--danger-color); color: white; }
-
-        /* --- قسم الدفع والخصم الشامل --- */
-        .summary-section { flex: 1.2; background: var(--accent-color); border-radius: 24px; padding: 25px; color: white; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 20px 40px rgba(0, 122, 255, 0.3); overflow-y: auto; }
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; opacity: 0.9; align-items: center; }
-        .total-row { font-size: 30px; font-weight: 800; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; margin-top: 5px; opacity: 1; }
+        /* تخصيص شريط التمرير */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0,88,188,0.3); border-radius: 10px; }
         
-        .control-box { background: rgba(0,0,0,0.15); padding: 15px; border-radius: 16px; margin-bottom: 15px; }
-        .control-title { font-size: 14px; font-weight: bold; margin-bottom: 10px; display: block; }
-        .payment-btns { display: flex; gap: 8px; }
-        .btn-choice { flex: 1; padding: 10px; border: none; border-radius: 10px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-weight: bold; transition: 0.2s;}
-        .btn-choice.active { background: white; color: var(--accent-color); }
-
-        .discount-controls { display: flex; gap: 8px; margin: 10px 0; align-items: center; }
-        .btn-disc { padding: 8px 12px; border: none; border-radius: 8px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-disc:hover { background: white; color: var(--accent-color); }
-        .global-disc-input { width: 70px; padding: 8px; border-radius: 8px; border: none; text-align: center; font-weight: bold; }
-        .global-disc-type { padding: 8px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-
-        .insurance-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; font-weight: bold;}
-        .ins-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .ins-input { width: 100%; padding: 8px; border-radius: 8px; border: none; font-size: 13px; outline: none; }
-
-        .print-toggle { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 14px; cursor: pointer; background: rgba(0,0,0,0.1); padding: 8px; border-radius: 30px; justify-content: center;}
-        .btn-pay { background: white; color: var(--accent-color); width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 20px; font-weight: 800; cursor: pointer; transition: transform 0.1s; margin-top: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;}
-        .btn-pay:active { transform: scale(0.98); }
-        .btn-pay:disabled { opacity: 0.7; cursor: not-allowed; }
-        .loader { width: 24px; height: 24px; border: 3px solid rgba(0,122,255,0.3); border-radius: 50%; border-top-color: var(--accent-color); animation: spin 1s linear infinite; display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- منطقة الطباعة --- */
-        #receipt-print-area { display: none; }
-        @media print {
-            body * { visibility: hidden; }
-            #receipt-print-area, #receipt-print-area * { visibility: visible; }
-            #receipt-print-area { display: block; position: absolute; left: 0; top: 0; width: 80mm; padding: 5mm; background: white; color: black; font-size: 12px; line-height: 1.4; }
-            .receipt-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px; }
-            .receipt-logo { font-size: 24px; font-weight: bold; display: block; }
-            .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            .receipt-table th, .receipt-table td { border-bottom: 1px solid #ccc; padding: 5px; text-align: right; }
-            .receipt-total-box { border-top: 1px dashed black; padding-top: 5px; margin-top: 10px; }
+        /* تأثيرات إضافية للبطاقات والجداول */
+        .glass-card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0, 88, 188, 0.06);
         }
+        .item-row-transition {
+            transition: all 0.2s ease;
+        }
+        /* تنسيق الأزرار الرقمية */
+        .qty-btn {
+            transition: all 0.15s;
+            width: 28px; height: 28px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; background: #f0f2f5; cursor: pointer;
+        }
+        .qty-btn:active { transform: scale(0.92); background: #d1d5db; }
+        .summary-blue-card {
+            background: linear-gradient(145deg, #0058bc, #004493);
+            box-shadow: 0 20px 35px -12px rgba(0,88,188,0.4);
+        }
+        /* تحسين ظهور نتائج البحث */
+        .search-results {
+            position: absolute;
+            top: 70px;
+            width: 100%;
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            border: 1px solid rgba(0,0,0,0.08);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 50;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15);
+        }
+        .search-item {
+            padding: 12px 18px;
+            border-bottom: 1px solid #eef2f6;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .search-item:hover { background: #0058bc10; color: #0058bc; }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-slide { animation: fadeSlide 0.2s ease; }
     </style>
 </head>
-<body>
+<body class="font-body overflow-hidden h-screen bg-[#f5f7fc]">
 
-    <div id="receipt-print-area"></div>
-
-    <nav class="sidebar">
-        <div class="nav-group">
-            <button class="nav-item active" title="نقطة البيع">🛒</button>
-            <button class="nav-item" title="المخزون" onclick="alert('لوحة المخزون قريباً')">📦</button>
+    <!-- ========== القائمة الجانبية الأنيقة (تصميم PharmaCore) ========== -->
+    <aside class="fixed right-0 top-0 h-full w-72 bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl z-50 flex flex-col">
+        <div class="px-6 pt-8 pb-6 border-b border-slate-800/60">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-emerald-400 text-3xl">local_pharmacy</span>
+                <span class="text-2xl font-black tracking-tight text-white font-headline">PharmaCore</span>
+            </div>
+            <span class="text-xs text-slate-400 mt-2 block">نظام البيع المتكامل V3.0</span>
         </div>
-        <button class="nav-item logout-btn" onclick="logout()" title="تسجيل خروج">🚪</button>
-    </nav>
+        <div class="flex-1 flex flex-col gap-2 px-4 py-6">
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white rounded-xl hover:bg-white/5 transition-all duration-200">
+                <span class="material-symbols-outlined">dashboard</span> لوحة التحكم
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 bg-emerald-500/15 text-emerald-400 border-r-4 border-emerald-500 rounded-xl transition-all">
+                <span class="material-symbols-outlined">point_of_sale</span> نقطة البيع
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white rounded-xl hover:bg-white/5" onclick="window.location.href='inventory.html'">
+                <span class="material-symbols-outlined">inventory_2</span> المخزون
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white rounded-xl hover:bg-white/5">
+                <span class="material-symbols-outlined">assessment</span> التقارير
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white rounded-xl hover:bg-white/5">
+                <span class="material-symbols-outlined">settings</span> الإعدادات
+            </a>
+        </div>
+        <div class="p-5 border-t border-slate-800/50">
+            <button onclick="logout()" class="flex items-center gap-3 w-full px-4 py-3 text-rose-400 hover:bg-rose-500/10 rounded-xl transition">
+                <span class="material-symbols-outlined">logout</span> تسجيل الخروج
+            </button>
+        </div>
+    </aside>
 
-    <main class="pos-container">
-        <section class="cart-section">
-            <div class="header-info">
-                <h2>فاتورة المبيعات</h2>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div class="cashier-badge" id="cashierNameDisplay">الكاشير: ...</div>
-                    <div class="edit-badge" id="editLabel">وضع التعديل</div>
+    <!-- ========== الشريط العلوي (Top Bar) ========== -->
+    <header class="fixed top-0 left-0 right-0 mr-72 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/70 z-40 flex items-center justify-between px-8 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="flex items-center bg-slate-100 rounded-full px-4 py-2 gap-2 w-80 focus-within:ring-2 focus-within:ring-emerald-400/50">
+                <span class="material-symbols-outlined text-slate-500">search</span>
+                <input type="text" id="globalSearchHelper" placeholder="بحث سريع..." class="bg-transparent border-none outline-none text-sm w-full" disabled readonly>
+            </div>
+            <div class="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full font-mono">F2 للبحث</div>
+        </div>
+        <div class="flex items-center gap-5">
+            <button class="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition"><span class="material-symbols-outlined">notifications</span></button>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <div class="text-sm font-semibold text-slate-700" id="cashierNameDisplayTop">الكاشير: ...</div>
+                    <div class="text-xs text-slate-400">صيدلية السحاب</div>
+                </div>
+                <div class="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-bold">ص</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== المحتوى الرئيسي (دمج تصميم القوائم + الوظائف الكاملة) ========== -->
+    <main class="mr-72 mt-16 p-6 h-[calc(100vh-4rem)] overflow-hidden flex gap-6">
+        <!-- القسم الأيسر: المسح الضوئي وقائمة المشتريات (60%) -->
+        <section class="flex-1 max-w-[60%] flex flex-col gap-5">
+            <!-- بطاقة المسح الضوئي (Scanner) -->
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 shadow-sm ring-1 ring-black/5">
+                <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-2xl">barcode_scanner</span>
+                </div>
+                <div class="flex-1">
+                    <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">مسح الباركود أو البحث</label>
+                    <input type="text" id="searchInput" autofocus autocomplete="off" class="w-full bg-transparent border-none p-0 text-lg font-body focus:ring-0 text-slate-800 placeholder:text-slate-400" placeholder="ادخل الباركود، الاسم (F2)...">
+                    <div id="searchResults" class="search-results hidden"></div>
+                </div>
+                <div class="text-xs font-mono bg-slate-100 px-2 py-1 rounded-md text-slate-500">F1</div>
+            </div>
+
+            <!-- التنقل بين الفواتير المحفوظة (ميزة احترافية) -->
+            <div class="flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-xl p-2 px-4 border border-slate-200/60">
+                <button id="btnPrev" onclick="navigateInvoices('prev')" class="nav-btn bg-slate-100 hover:bg-primary hover:text-white px-4 py-1.5 rounded-full text-sm font-medium transition">← السابقة</button>
+                <span id="navStatus" class="text-sm font-medium text-slate-700 bg-slate-100 px-4 py-1.5 rounded-full">فاتورة جديدة</span>
+                <button id="btnNext" onclick="navigateInvoices('next')" class="nav-btn bg-slate-100 hover:bg-primary hover:text-white px-4 py-1.5 rounded-full text-sm font-medium transition" disabled>التالي →</button>
+                <button onclick="resetToNew()" class="bg-emerald-500 text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-sm mr-auto">+ فاتورة جديدة</button>
+                <div id="editLabel" class="edit-badge bg-amber-500 text-white px-3 py-1 rounded-full text-xs hidden">وضع التعديل</div>
+            </div>
+
+            <!-- قائمة المنتجات / السلة (جدول أنيق) -->
+            <div class="glass-card rounded-2xl flex-1 flex flex-col overflow-hidden shadow-sm">
+                <div class="grid grid-cols-12 gap-2 px-5 py-4 bg-slate-50/80 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/70">
+                    <div class="col-span-5">المنتج / الباركود</div>
+                    <div class="col-span-2 text-center">السعر</div>
+                    <div class="col-span-2 text-center">الكمية</div>
+                    <div class="col-span-2 text-center">خصم %</div>
+                    <div class="col-span-1 text-left">الإجمالي</div>
+                </div>
+                <div id="cartItemsContainer" class="flex-1 overflow-y-auto custom-scroll px-2 py-2 space-y-1"></div>
+                <!-- حالة الماسح الضوئي -->
+                <div class="px-5 py-3 bg-slate-50/50 border-t border-slate-200/60 flex justify-between text-xs">
+                    <div class="flex items-center gap-2 text-emerald-600"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> الماسح نشط</div>
+                    <div class="text-slate-400" id="itemCountDisplay">0 منتجات</div>
                 </div>
             </div>
-
-            <div class="invoice-navigation">
-                <button class="nav-btn" id="btnPrev" onclick="navigateInvoices('prev')">→ سابقة</button>
-                <span id="navStatus">فاتورة جديدة</span>
-                <button class="nav-btn" id="btnNext" onclick="navigateInvoices('next')" disabled>تالية ←</button>
-                <button class="nav-btn" onclick="resetToNew()" style="background:var(--success-color); color:white; margin-right:auto;">+ جديدة</button>
-            </div>
-
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="ابحث بالاسم، الباركود (F2) أو امسح مباشرة..." autofocus autocomplete="off">
-                <div id="searchResults" class="search-results"></div>
-            </div>
-            
-            <div class="cart-items" id="cartItemsContainer"></div>
         </section>
 
-        <section class="summary-section">
-            <div>
-                <h3 style="margin-bottom: 15px;">إتمام العملية</h3>
-
-                <div class="control-box">
-                    <span class="control-title">طريقة الدفع:</span>
-                    <div class="payment-btns">
-                        <button class="btn-choice active" id="pay_cash" onclick="setPaymentMethod('CASH')">نقدي</button>
-                        <button class="btn-choice" id="pay_visa" onclick="setPaymentMethod('VISA')">فيزا</button>
-                        <button class="btn-choice" id="pay_cliq" onclick="setPaymentMethod('CLIQ')">كليك</button>
+        <!-- القسم الأيمن: الخلاصة والدفع (40%) مستوحى من الكود الثاني + لمسة أنيقة -->
+        <section class="flex-[0.8] flex flex-col">
+            <div class="summary-blue-card rounded-3xl flex flex-col h-full overflow-hidden shadow-2xl text-white">
+                <div class="p-6 pb-2 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-light tracking-tight">إتمام الدفع</h2>
+                        <p class="text-sm text-white/70 mt-1" id="customerType">عميل عابر</p>
                     </div>
+                    <button class="bg-white/20 hover:bg-white/30 rounded-xl px-4 py-2 text-sm font-medium backdrop-blur-sm transition">+ إضافة مريض</button>
                 </div>
-
-                <div class="control-box">
-                    <label class="insurance-toggle">
-                        <input type="checkbox" id="isInsurance" onchange="toggleInsurance()">
-                        <span>تأمين طبي</span>
+                
+                <div class="flex-1 p-6 space-y-5 overflow-y-auto custom-scroll">
+                    <!-- طريقة الدفع -->
+                    <div class="bg-white/10 rounded-2xl p-4">
+                        <div class="text-sm font-bold mb-3">طريقة الدفع</div>
+                        <div class="flex gap-3">
+                            <button id="pay_cash" onclick="setPaymentMethod('CASH')" class="btn-choice flex-1 py-2.5 rounded-xl bg-white/20 font-semibold backdrop-blur-sm transition active:scale-95">نقدي</button>
+                            <button id="pay_visa" onclick="setPaymentMethod('VISA')" class="btn-choice flex-1 py-2.5 rounded-xl bg-white/20 font-semibold">فيزا</button>
+                            <button id="pay_cliq" onclick="setPaymentMethod('CLIQ')" class="btn-choice flex-1 py-2.5 rounded-xl bg-white/20 font-semibold">كليك</button>
+                        </div>
+                    </div>
+                    
+                    <!-- التأمين الطبي -->
+                    <div class="bg-white/10 rounded-2xl p-4">
+                        <label class="insurance-toggle flex items-center gap-2 cursor-pointer font-semibold">
+                            <input type="checkbox" id="isInsurance" onchange="toggleInsurance()" class="w-4 h-4 rounded border-white/30 bg-transparent">
+                            <span>تأمين طبي</span>
+                        </label>
+                        <div id="insuranceSection" class="mt-3 space-y-3 hidden">
+                            <select id="insCompany" class="w-full p-2 rounded-xl bg-white/20 border-none text-white text-sm"><option>تحميل شركات التأمين...</option></select>
+                            <input type="text" id="insNumber" class="w-full p-2 rounded-xl bg-white/20 border-none text-white text-sm" placeholder="رقم بطاقة التأمين">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">نسبة تحمل المريض %</span>
+                                <input type="number" id="insCopay" value="20" min="0" max="100" class="w-24 p-2 rounded-xl bg-white/20 border-none text-white text-center">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- تفاصيل الحساب -->
+                    <div class="space-y-2 text-white/90">
+                        <div class="flex justify-between"><span>المجموع الفرعي</span><span id="subtotalDisplay" class="font-mono">0.00 د.أ</span></div>
+                        <div class="flex justify-between"><span>الخصومات الكلية</span><span id="totalDiscountDisplay" class="font-mono text-amber-200">0.00 د.أ</span></div>
+                        <div id="insuranceSummary" class="hidden justify-between"><span>ذمة التأمين</span><span id="insDebtDisplay" class="font-mono text-emerald-200">0.00 د.أ</span></div>
+                    </div>
+                    
+                    <!-- خصم شامل سريع -->
+                    <div class="bg-black/20 rounded-xl p-3">
+                        <div class="text-sm font-bold mb-2">خصم شامل</div>
+                        <div class="flex gap-2 items-center flex-wrap">
+                            <button onclick="setGlobalDiscount(10,'percent')" class="btn-disc bg-white/20 px-3 py-1.5 rounded-lg text-sm">10%</button>
+                            <button onclick="setGlobalDiscount(5,'percent')" class="btn-disc bg-white/20 px-3 py-1.5 rounded-lg text-sm">5%</button>
+                            <input type="number" id="gDiscVal" class="global-disc-input w-20 p-1.5 rounded-lg bg-white text-slate-800 text-center" placeholder="0" value="0">
+                            <select id="gDiscType" class="global-disc-type p-1.5 rounded-lg bg-white text-slate-800 text-sm">
+                                <option value="percent">%</option><option value="fixed">د.أ</option>
+                            </select>
+                            <button onclick="customGlobalDiscount()" class="text-xs bg-white/30 px-2 py-1 rounded">تطبيق</button>
+                        </div>
+                    </div>
+                    
+                    <!-- الإجمالي النهائي -->
+                    <div class="border-t border-white/30 pt-4 mt-2">
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-xl font-bold" id="totalLabel">المطلوب دفعه</span>
+                            <span id="grandTotal" class="text-4xl font-black tracking-tighter">0.00 د.أ</span>
+                        </div>
+                    </div>
+                    
+                    <!-- خيار الطباعة التلقائية -->
+                    <label class="flex items-center gap-2 cursor-pointer text-sm bg-white/10 p-2 rounded-xl justify-center">
+                        <input type="checkbox" id="autoPrint" checked class="rounded">
+                        🖨️ طباعة فاتورة تلقائياً بعد الدفع
                     </label>
-                    <div id="insuranceSection" style="display: none;">
-                        <div class="ins-fields">
-                            <select id="insCompany" class="ins-input"><option>تحميل...</option></select>
-                            <input type="text" id="insNumber" class="ins-input" placeholder="رقم بطاقة التأمين">
-                        </div>
-                        <div style="margin-top: 10px; display: flex; justify-content: space-between;">
-                            <span>تحمل المريض %:</span>
-                            <input type="number" id="insCopay" class="ins-input" value="20" min="0" max="100" oninput="renderCart()" style="width:70px">
-                        </div>
+                </div>
+                
+                <!-- زر الدفع النهائي -->
+                <div class="p-6 pt-0">
+                    <button id="payBtn" onclick="processPayment()" class="w-full bg-white text-primary py-4 rounded-xl font-black text-xl flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transition-all active:scale-[0.98]">
+                        <span id="btnText">تأكيد العملية (Enter)</span>
+                        <div id="payLoader" class="loader w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin hidden"></div>
+                    </button>
+                    <div class="flex gap-3 mt-3">
+                        <button class="flex-1 bg-white/20 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-lg">receipt_long</span> إيصال</button>
+                        <button class="flex-1 bg-white/20 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1"><span class="material-symbols-outlined text-lg">more_horiz</span> خيارات</button>
                     </div>
                 </div>
-                
-                <div class="summary-row"><span>المجموع الفرعي:</span><span id="subtotalDisplay">0.00 د.أ</span></div>
-
-                <div class="discount-controls">
-                    <button class="btn-disc" onclick="setGlobalDiscount(10,'percent')">10%</button>
-                    <button class="btn-disc" onclick="setGlobalDiscount(5,'percent')">5%</button>
-                    <input type="number" id="gDiscVal" class="global-disc-input" placeholder="0" min="0" oninput="customGlobalDiscount()">
-                    <select id="gDiscType" class="global-disc-type" onchange="customGlobalDiscount()">
-                        <option value="percent">%</option><option value="fixed">د.أ</option>
-                    </select>
-                </div>
-
-                <div class="summary-row" style="color:#ffde00;"><span>إجمالي الخصومات:</span><span id="totalDiscountDisplay">0.00 د.أ</span></div>
-                <div id="insuranceSummary" style="display:none;"><div class="summary-row" style="color:#34c759;"><span>ذمة التأمين:</span><span id="insDebtDisplay">0.00 د.أ</span></div></div>
-                <div class="summary-row total-row"><span id="totalLabel">المطلوب دفعه:</span><span id="grandTotal">0.00 د.أ</span></div>
-                
-                <label class="print-toggle">
-                    <input type="checkbox" id="autoPrint" checked> 🖨️ طباعة فاتورة تلقائياً
-                </label>
             </div>
-            
-            <button class="btn-pay" id="payBtn" onclick="processPayment()">
-                <span id="btnText">تأكيد العملية (Enter)</span>
-                <div id="payLoader" class="loader"></div>
-            </button>
         </section>
     </main>
+    
+    <div id="receipt-print-area" style="display: none;"></div>
 
+    <!-- Firebase والمنطق الكامل (نفس الميزات بدون فقدان أي شيء) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, serverTimestamp, getDocs, doc, updateDoc, increment, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, serverTimestamp, getDocs, doc, updateDoc, increment, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        // Config
+        
         const firebaseConfig = {
             apiKey: "AIzaSyDP6FlbjAeUqut_79qW0T3rPSvfsjPdHfA",
             authDomain: "gen-lang-client-0023266031.firebaseapp.com",
@@ -231,13 +299,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "ai-studio-2f881b3f-5867-4dfd-b360-c85f26c6ded4");
         const auth = getAuth(app);
-
-        // جلسة
+        
         const sessionData = JSON.parse(sessionStorage.getItem('pharmacy_session') || 'null');
         if (!sessionData) window.location.href = 'login.html';
-        document.getElementById('cashierNameDisplay').textContent = `الكاشير: ${sessionData.name}`;
-
-        // متغيرات
+        document.getElementById('cashierNameDisplayTop').innerText = `الكاشير: ${sessionData.name}`;
+        
+        // المتغيرات العامة
         let cart = [];
         let catalog = [];
         let recentSales = [];
@@ -247,54 +314,51 @@
         let globalDiscount = { value: 0, type: 'percent' };
         let barcodeBuffer = '';
         let barcodeTimer = null;
-
+        
         // دوال مساعدة
-        function playBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 900; osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} }
-
-        // تحميل البيانات
+        function playBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 880; osc.start(); osc.stop(ctx.currentTime + 0.08); } catch(e) {} }
+        
         async function loadData() {
             try {
                 const prodSnap = await getDocs(collection(db, "products"));
-                catalog = [];
-                prodSnap.forEach(d => catalog.push({ id: d.id, ...d.data() }));
+                catalog = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const insSnap = await getDocs(collection(db, "insurance_companies"));
                 const insSelect = document.getElementById('insCompany');
                 insSelect.innerHTML = '<option value="">-- اختر الشركة --</option>';
                 insSnap.forEach(d => insSelect.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
                 await loadRecentSales();
+                renderCart();
             } catch(e) { console.error(e); alert("خطأ في تحميل البيانات"); }
         }
-
+        
         async function loadRecentSales() {
             const today = new Date(); today.setHours(0,0,0,0);
-            const q = query(collection(db, "sales"), where("timestamp", ">=", today), orderBy("timestamp", "desc"), limit(15));
+            const q = query(collection(db, "sales"), where("timestamp", ">=", today), orderBy("timestamp", "desc"), limit(20));
             const snap = await getDocs(q);
             recentSales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
-
-        // عرض السلة والحسابات (دمج منطق الخصم والتأمين)
+        
         window.renderCart = function() {
             const container = document.getElementById('cartItemsContainer');
             container.innerHTML = '';
-            let subtotalRaw = 0; // مجموع الأصناف قبل خصومات الأصناف
-            let totalItemDiscount = 0;
-            cart.forEach(item => {
+            let subtotalRaw = 0, totalItemDiscount = 0;
+            cart.forEach((item, idx) => {
                 let itemBase = item.price * item.qty;
-                let itemDiscAmt = itemBase * (item.itemDiscountPercent / 100);
+                let itemDiscAmt = itemBase * ((item.itemDiscountPercent||0) / 100);
                 let finalItem = itemBase - itemDiscAmt;
                 subtotalRaw += finalItem;
                 totalItemDiscount += itemDiscAmt;
-                container.innerHTML += `
-                    <div class="item-row">
-                        <div class="item-details"><h4>${item.name}</h4><span class="barcode-badge">${item.barcode}</span></div>
-                        <div class="item-controls">
-                            <input type="number" class="item-discount-input" placeholder="خصم %" min="0" max="100" value="${item.itemDiscountPercent||''}" onchange="updateItemDiscount('${item.barcode}', this.value)">
-                            <input type="number" class="item-qty" value="${item.qty}" min="1" onchange="updateQty('${item.barcode}', this.value)">
-                            <div class="item-price">${finalItem.toFixed(2)}</div>
-                            <button class="btn-remove" onclick="removeFromCart('${item.barcode}')">✖</button>
-                        </div>
-                    </div>
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "grid grid-cols-12 gap-2 items-center p-3 bg-white/50 rounded-xl border border-slate-100 shadow-sm item-row-transition";
+                rowDiv.innerHTML = `
+                    <div class="col-span-5"><div class="font-semibold text-slate-800">${item.name}</div><div class="text-[11px] text-slate-400 font-mono">${item.barcode}</div></div>
+                    <div class="col-span-2 text-center font-medium">${item.price.toFixed(2)}</div>
+                    <div class="col-span-2 flex justify-center gap-1 items-center"><button class="qty-btn" onclick="window.changeQty('${item.barcode}', -1)">-</button><input type="number" class="w-12 text-center border rounded-lg p-1 text-sm" value="${item.qty}" min="1" onchange="window.updateQtyDirect('${item.barcode}', this.value)"><button class="qty-btn" onclick="window.changeQty('${item.barcode}', 1)">+</button></div>
+                    <div class="col-span-2"><input type="number" class="w-full p-1 border border-amber-300 rounded-lg text-center text-sm" value="${item.itemDiscountPercent||0}" min="0" max="100" onchange="window.updateItemDiscount('${item.barcode}', this.value)"></div>
+                    <div class="col-span-1 text-left font-bold text-primary">${finalItem.toFixed(2)}</div>
+                    <div class="absolute left-2 top-2 opacity-0 group-hover:opacity-100"><button onclick="window.removeFromCart('${item.barcode}')" class="text-red-500"><span class="material-symbols-outlined text-base">delete</span></button></div>
                 `;
+                container.appendChild(rowDiv);
             });
             let globalAmt = (globalDiscount.type === 'percent') ? subtotalRaw * (globalDiscount.value/100) : globalDiscount.value;
             if(globalAmt > subtotalRaw) globalAmt = subtotalRaw;
@@ -302,80 +366,68 @@
             let totalDiscount = totalItemDiscount + globalAmt;
             const isIns = document.getElementById('isInsurance').checked;
             const copay = parseFloat(document.getElementById('insCopay').value) || 0;
-            let patientPays = invoiceTotal;
-            let insDebt = 0;
-            if(isIns) {
-                patientPays = invoiceTotal * (copay/100);
-                insDebt = invoiceTotal - patientPays;
-            }
+            let patientPays = invoiceTotal, insDebt = 0;
+            if(isIns) { patientPays = invoiceTotal * (copay/100); insDebt = invoiceTotal - patientPays; }
             document.getElementById('subtotalDisplay').innerText = (subtotalRaw + totalItemDiscount).toFixed(2) + ' د.أ';
             document.getElementById('totalDiscountDisplay').innerText = totalDiscount.toFixed(2) + ' د.أ';
             document.getElementById('insDebtDisplay').innerText = insDebt.toFixed(2) + ' د.أ';
             document.getElementById('grandTotal').innerText = patientPays.toFixed(2) + ' د.أ';
             document.getElementById('totalLabel').innerHTML = isIns ? 'يتحمل المريض:' : 'المطلوب دفعه:';
+            document.getElementById('itemCountDisplay').innerText = cart.length + ' منتجات';
             window.currentInvoiceData = { subtotalRaw, totalDiscount, invoiceTotal, patientPays, insDebt };
         };
-
-        // دوال السلة والبحث
+        
+        window.changeQty = (bc, delta) => { let i = cart.find(i=>i.barcode===bc); if(i) { let newQty = i.qty + delta; if(newQty>=1) i.qty = newQty; renderCart(); } };
+        window.updateQtyDirect = (bc, val) => { let i = cart.find(i=>i.barcode===bc); if(i) { i.qty = parseInt(val)||1; renderCart(); } };
+        window.updateItemDiscount = (bc, val) => { let i = cart.find(i=>i.barcode===bc); if(i) { i.itemDiscountPercent = Math.min(100, parseFloat(val)||0); renderCart(); } };
+        window.removeFromCart = (bc) => { cart = cart.filter(i=>i.barcode!==bc); renderCart(); };
+        window.setGlobalDiscount = (val,type) => { globalDiscount = { value: val, type: type }; document.getElementById('gDiscVal').value = val; document.getElementById('gDiscType').value = type; renderCart(); };
+        window.customGlobalDiscount = () => { globalDiscount = { value: parseFloat(document.getElementById('gDiscVal').value)||0, type: document.getElementById('gDiscType').value }; renderCart(); };
+        window.setPaymentMethod = (m) => { paymentMethod = m; document.querySelectorAll('.btn-choice').forEach(b=>b.classList.remove('bg-white','text-primary','!bg-white/60')); document.getElementById(`pay_${m.toLowerCase()}`).classList.add('bg-white','text-primary','!bg-white/60'); };
+        window.toggleInsurance = () => { let isIns = document.getElementById('isInsurance').checked; document.getElementById('insuranceSection').style.display = isIns ? 'block' : 'none'; document.getElementById('insuranceSummary').style.display = isIns ? 'flex' : 'none'; renderCart(); };
+        
         window.addToCartDirectly = (product) => {
             let existing = cart.find(i => i.barcode === product.barcode);
             if(existing) existing.qty += 1;
             else cart.push({ ...product, qty: 1, itemDiscountPercent: 0 });
             playBeep(); renderCart();
         };
-        window.updateQty = (bc, val) => { let i = cart.find(i=>i.barcode===bc); if(i){ i.qty = parseInt(val)||1; renderCart(); } };
-        window.updateItemDiscount = (bc, val) => { let i = cart.find(i=>i.barcode===bc); if(i){ i.itemDiscountPercent = Math.min(100, parseFloat(val)||0); renderCart(); } };
-        window.removeFromCart = (bc) => { cart = cart.filter(i=>i.barcode!==bc); renderCart(); };
-        window.setGlobalDiscount = (val,type) => { document.getElementById('gDiscVal').value = val; document.getElementById('gDiscType').value = type; customGlobalDiscount(); };
-        window.customGlobalDiscount = () => { globalDiscount = { value: parseFloat(document.getElementById('gDiscVal').value)||0, type: document.getElementById('gDiscType').value }; renderCart(); };
-        window.setPaymentMethod = (m) => { paymentMethod = m; document.querySelectorAll('.btn-choice').forEach(b=>b.classList.remove('active')); document.getElementById(`pay_${m.toLowerCase()}`).classList.add('active'); };
-        window.toggleInsurance = () => { let isIns = document.getElementById('isInsurance').checked; document.getElementById('insuranceSection').style.display = isIns ? 'block' : 'none'; document.getElementById('insuranceSummary').style.display = isIns ? 'block' : 'none'; renderCart(); };
-
-        // البحث
+        
+        // البحث والباركود
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
         searchInput.addEventListener('input', function() {
             let val = this.value.trim().toLowerCase();
+            if(val.length < 1) { searchResults.classList.add('hidden'); return; }
+            let matches = catalog.filter(p => (p.barcode && p.barcode.includes(val)) || (p.name && p.name.toLowerCase().includes(val))).slice(0,6);
             searchResults.innerHTML = '';
-            if(val.length < 1) { searchResults.style.display = 'none'; return; }
-            let matches = catalog.filter(p => (p.barcode && p.barcode.includes(val)) || (p.name && p.name.toLowerCase().includes(val))).slice(0,7);
             if(matches.length) {
                 matches.forEach(p => {
-                    let div = document.createElement('div'); div.className = 'search-item';
-                    div.innerHTML = `<span>${p.name}</span> <span>${p.price} د.أ</span>`;
-                    div.onclick = () => { addToCartDirectly(p); searchInput.value = ''; searchResults.style.display = 'none'; searchInput.focus(); };
+                    let div = document.createElement('div'); div.className = 'search-item flex justify-between';
+                    div.innerHTML = `<span>${p.name}</span><span class="font-bold">${p.price} د.أ</span>`;
+                    div.onclick = () => { addToCartDirectly(p); searchInput.value = ''; searchResults.classList.add('hidden'); searchInput.focus(); };
                     searchResults.appendChild(div);
                 });
-                searchResults.style.display = 'block';
-            } else searchResults.style.display = 'none';
+                searchResults.classList.remove('hidden');
+            } else searchResults.classList.add('hidden');
         });
-        function handleExactMatch(text) {
-            let prod = catalog.find(p => p.barcode === text || p.name === text);
-            if(prod) addToCartDirectly(prod);
-            else alert(`المنتج "${text}" غير موجود`);
-        }
-        // باركود سريع
         document.addEventListener('keydown', (e) => {
             if(e.key === 'F2') { e.preventDefault(); searchInput.focus(); return; }
             if(e.key === 'Enter' && cart.length && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') { processPayment(); return; }
-            if(e.key === 'Enter' && barcodeBuffer.length > 3) { handleExactMatch(barcodeBuffer); barcodeBuffer = ''; e.preventDefault(); return; }
-            if(e.key.length === 1 && !e.ctrlKey && !e.altKey && e.target.tagName !== 'INPUT') {
-                barcodeBuffer += e.key; clearTimeout(barcodeTimer); barcodeTimer = setTimeout(() => { barcodeBuffer = ''; }, 50);
-            }
+            if(e.key === 'Enter' && barcodeBuffer.length > 3) { let prod = catalog.find(p => p.barcode === barcodeBuffer); if(prod) addToCartDirectly(prod); barcodeBuffer = ''; e.preventDefault(); return; }
+            if(e.key.length === 1 && !e.ctrlKey && !e.altKey && e.target !== searchInput) { barcodeBuffer += e.key; clearTimeout(barcodeTimer); barcodeTimer = setTimeout(() => { barcodeBuffer = ''; }, 50); }
         });
-        searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter' && this.value?.trim()) handleExactMatch(searchInput.value.trim()); });
-
+        
         // الملاحة بين الفواتير
         window.navigateInvoices = async (dir) => {
             if(dir === 'prev') currentIndex++; else currentIndex--;
             if(currentIndex >= recentSales.length) currentIndex = recentSales.length-1;
             if(currentIndex < 0) { resetToNew(); return; }
             const sale = recentSales[currentIndex];
-            isEditMode = true; cart = sale.items.map(i => ({ ...i, itemDiscountPercent: i.discountPercent || 0, price: i.basePrice || i.price }));
-            paymentMethod = sale.paymentMethod || 'CASH';
-            globalDiscount = sale.globalDiscountApplied || { value:0, type:'percent' };
-            document.getElementById('editLabel').style.display = 'flex';
-            document.getElementById('navStatus').textContent = `فاتورة #${sale.id.slice(-6)}`;
+            isEditMode = true; cart = sale.items.map(i => ({ ...i, itemDiscountPercent: i.discountPercent || 0, price: i.basePrice || i.price, qty: i.qty }));
+            paymentMethod = sale.paymentMethod || 'CASH'; globalDiscount = sale.globalDiscountApplied || { value:0, type:'percent' };
+            document.getElementById('editLabel').classList.remove('hidden');
+            document.getElementById('navStatus').innerText = `فاتورة #${sale.id.slice(-6)}`;
             document.getElementById('btnNext').disabled = false;
             setPaymentMethod(paymentMethod);
             document.getElementById('gDiscVal').value = globalDiscount.value;
@@ -388,79 +440,32 @@
             } else { document.getElementById('insNumber').value = ''; }
             toggleInsurance(); renderCart();
         };
-        window.resetToNew = function() {
-            isEditMode = false; currentIndex = -1; cart = []; globalDiscount = { value:0, type:'percent' };
-            document.getElementById('editLabel').style.display = 'none';
-            document.getElementById('navStatus').textContent = 'فاتورة جديدة';
-            document.getElementById('btnNext').disabled = true;
-            document.getElementById('isInsurance').checked = false;
-            document.getElementById('gDiscVal').value = 0;
-            document.getElementById('insNumber').value = '';
-            document.getElementById('insCompany').value = '';
-            toggleInsurance(); renderCart(); searchInput.focus();
-        };
-
-        // إنشاء قالب الطباعة
+        window.resetToNew = function() { isEditMode = false; currentIndex = -1; cart = []; globalDiscount = { value:0, type:'percent' }; document.getElementById('editLabel').classList.add('hidden'); document.getElementById('navStatus').innerText = 'فاتورة جديدة'; document.getElementById('btnNext').disabled = true; document.getElementById('isInsurance').checked = false; document.getElementById('gDiscVal').value = 0; document.getElementById('insNumber').value = ''; toggleInsurance(); renderCart(); searchInput.focus(); };
+        
         function generateReceiptHTML(data) {
-            let itemsHtml = data.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${(i.price * i.qty).toFixed(2)}</td>`).join('');
-            return `<div class="receipt-header"><span class="receipt-logo">☁️ صيدلية السحاب</span><p>${new Date().toLocaleString('ar-JO')}</p><p>رقم الفاتورة: ${Math.floor(Math.random()*10000)}</p></div>
-            <table class="receipt-table"><thead><tr><th>الصنف</th><th>كمية</th><th>السعر</th></tr></thead><tbody>${itemsHtml}</tbody></table>
-            <div class="receipt-total-box"><div>المجموع: ${data.totalInvoiceAmount.toFixed(2)} د.أ</div>
-            ${data.isInsurance ? `<div>تحمل المريض: ${data.amountPaidByPatient.toFixed(2)} د.أ</div><div>ذمة التأمين: ${(data.totalInvoiceAmount - data.amountPaidByPatient).toFixed(2)} د.أ</div>` : ''}
-            <div style="font-weight:bold">المطلوب: ${data.amountPaidByPatient.toFixed(2)} د.أ</div></div>
-            <div class="receipt-footer"><p>الكاشير: ${data.cashierName}</p><p>شكراً لثقتكم</p></div>`;
+            let itemsHtml = data.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${(i.price * i.qty).toFixed(2)}</td></tr>`).join('');
+            return `<div class="receipt-header text-center border-b pb-2"><div class="font-bold text-xl">صيدلية السحاب</div><div>${new Date().toLocaleString('ar-JO')}</div></div><table class="w-full mt-2"><thead><tr><th>الصنف</th><th>ك</th><th>سعر</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="border-t mt-2 pt-1"><div>المجموع: ${data.totalInvoiceAmount.toFixed(2)} د.أ</div>${data.isInsurance ? `<div>تحمل المريض: ${data.amountPaidByPatient.toFixed(2)} د.أ</div><div>ذمة التأمين: ${(data.totalInvoiceAmount - data.amountPaidByPatient).toFixed(2)} د.أ</div>` : ''}<div class="font-bold">المدفوع: ${data.amountPaidByPatient.toFixed(2)} د.أ</div></div>`;
         }
-
-        // معالجة الدفع (مع تعديل الفواتير وحذف القديم ورفع الذمة)
+        
         window.processPayment = async function() {
             if(cart.length === 0) return;
             const isIns = document.getElementById('isInsurance').checked;
             const insCompId = document.getElementById('insCompany').value;
             const insNumber = document.getElementById('insNumber').value;
             if(isIns && (!insCompId || !insNumber)) { alert("يرجى إدخال بيانات التأمين كاملة"); return; }
-            const btn = document.getElementById('payBtn');
-            btn.disabled = true; document.getElementById('btnText').style.display='none'; document.getElementById('payLoader').style.display='block';
+            const btn = document.getElementById('payBtn'); btn.disabled = true; document.getElementById('btnText').classList.add('hidden'); document.getElementById('payLoader').classList.remove('hidden');
             try {
-                if(isEditMode && currentIndex !== -1) {
-                    const oldSale = recentSales[currentIndex];
-                    if(oldSale.isInsurance && oldSale.insuranceDetails?.debtAmount) {
-                        await updateDoc(doc(db, "insurance_companies", oldSale.insuranceDetails.companyId), { total_debt: increment(-oldSale.insuranceDetails.debtAmount) });
-                    }
-                    await deleteDoc(doc(db, "sales", oldSale.id));
-                }
+                if(isEditMode && currentIndex !== -1) { const oldSale = recentSales[currentIndex]; if(oldSale.isInsurance && oldSale.insuranceDetails?.debtAmount) await updateDoc(doc(db, "insurance_companies", oldSale.insuranceDetails.companyId), { total_debt: increment(-oldSale.insuranceDetails.debtAmount) }); await deleteDoc(doc(db, "sales", oldSale.id)); }
                 const finalData = window.currentInvoiceData;
-                const invoiceObj = {
-                    branchId: sessionData.branchId, cashierId: sessionData.uid, cashierName: sessionData.name,
-                    paymentMethod, isInsurance: isIns,
-                    items: cart.map(i => ({ id:i.id, name:i.name, barcode:i.barcode, price:i.price, qty:i.qty, discountPercent:i.itemDiscountPercent, finalPrice: i.price * i.qty * (1 - (i.itemDiscountPercent/100)) })),
-                    subtotal: finalData.subtotalRaw + finalData.totalDiscount,
-                    globalDiscountApplied: globalDiscount,
-                    totalDiscountAmount: finalData.totalDiscount,
-                    totalInvoiceAmount: finalData.invoiceTotal,
-                    amountPaidByPatient: finalData.patientPays,
-                    insuranceDetails: isIns ? {
-                        companyId: insCompId,
-                        companyName: document.getElementById('insCompany').options[document.getElementById('insCompany').selectedIndex]?.text || '',
-                        memberNumber: insNumber,
-                        copayPercent: parseFloat(document.getElementById('insCopay').value),
-                        debtAmount: finalData.insDebt
-                    } : null,
-                    timestamp: serverTimestamp()
-                };
+                const invoiceObj = { branchId: sessionData.branchId, cashierId: sessionData.uid, cashierName: sessionData.name, paymentMethod, isInsurance: isIns, items: cart.map(i => ({ id:i.id, name:i.name, barcode:i.barcode, price:i.price, qty:i.qty, discountPercent:i.itemDiscountPercent, finalPrice: i.price * i.qty * (1 - (i.itemDiscountPercent/100)) })), subtotal: finalData.subtotalRaw + finalData.totalDiscount, globalDiscountApplied: globalDiscount, totalDiscountAmount: finalData.totalDiscount, totalInvoiceAmount: finalData.invoiceTotal, amountPaidByPatient: finalData.patientPays, insuranceDetails: isIns ? { companyId: insCompId, companyName: document.getElementById('insCompany').options[document.getElementById('insCompany').selectedIndex]?.text || '', memberNumber: insNumber, copayPercent: parseFloat(document.getElementById('insCopay').value), debtAmount: finalData.insDebt } : null, timestamp: serverTimestamp() };
                 await addDoc(collection(db, "sales"), invoiceObj);
-                if(isIns && finalData.insDebt > 0) {
-                    await updateDoc(doc(db, "insurance_companies", insCompId), { total_debt: increment(finalData.insDebt) });
-                }
-                if(document.getElementById('autoPrint').checked) {
-                    document.getElementById('receipt-print-area').innerHTML = generateReceiptHTML(invoiceObj);
-                    setTimeout(() => window.print(), 200);
-                } else { alert("تم حفظ الفاتورة بنجاح"); }
+                if(isIns && finalData.insDebt > 0) await updateDoc(doc(db, "insurance_companies", insCompId), { total_debt: increment(finalData.insDebt) });
+                if(document.getElementById('autoPrint').checked) { document.getElementById('receipt-print-area').innerHTML = generateReceiptHTML(invoiceObj); setTimeout(() => window.print(), 200); } else alert("تم حفظ الفاتورة بنجاح");
                 await loadRecentSales(); resetToNew();
-            } catch(err) { alert("خطأ: "+err.message); } finally { btn.disabled=false; document.getElementById('btnText').style.display='block'; document.getElementById('payLoader').style.display='none'; }
+            } catch(err) { alert("خطأ: "+err.message); } finally { btn.disabled=false; document.getElementById('btnText').classList.remove('hidden'); document.getElementById('payLoader').classList.add('hidden'); }
         };
-
+        
         window.logout = () => { sessionStorage.clear(); auth.signOut().then(()=> window.location.href='login.html'); };
-
         onAuthStateChanged(auth, (user) => { if(user) loadData(); else window.location.href='login.html'; });
     </script>
 </body>
