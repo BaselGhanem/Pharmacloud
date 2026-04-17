@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المخزون - PharmaCloud</title>
+    <style>
+        /* --- التصميم (هوية PharmaCloud المعتمدة) --- */
+        :root {
+            --bg-color: #f4f7f6;
+            --surface-color: rgba(255, 255, 255, 0.9);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #1d1d1f;
+            --accent-color: #007aff;
+            --success-color: #34c759;
+            --danger-color: #ff3b30;
+            --warning-color: #ff9500;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 80px; background: white; border-left: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+        .nav-item { width: 50px; height: 50px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; color: var(--text-primary); text-decoration: none;}
+        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: white; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        /* Inventory Grid */
+        .grid-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+
+        /* Card Style */
+        .card { background: white; border-radius: 20px; padding: 25px; border: 1px solid var(--border-color); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        .card-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; font-weight: 600; }
+        .form-control { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); outline: none; font-size: 14px; }
+        .form-control:focus { border-color: var(--accent-color); }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: right; padding: 12px; color: var(--text-secondary); font-size: 13px; border-bottom: 2px solid var(--bg-color); }
+        td { padding: 12px; border-bottom: 1px solid var(--bg-color); font-size: 14px; }
+        .stock-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .status-low { background: rgba(255, 59, 48, 0.1); color: var(--danger-color); }
+        .status-good { background: rgba(52, 199, 89, 0.1); color: var(--success-color); }
+
+        .btn-add { background: var(--accent-color); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-add:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* Search Bar */
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 12px 40px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .search-box i { position: absolute; right: 15px; top: 15px; color: var(--text-secondary); }
+
+        .batch-info { font-size: 11px; color: var(--warning-color); display: block; margin-top: 2px; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <a href="dashboard.html" class="nav-item">📊</a>
+        <a href="pos.html" class="nav-item">🛒</a>
+        <a href="inventory.html" class="nav-item active">📦</a>
+        <button class="nav-item" style="margin-top: auto; border:none; background:none; color:var(--danger-color)" onclick="logout()">🚪</button>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1 style="font-size: 26px;">إدارة المخزون والمستودع</h1>
+                <p style="color: #86868b;">تتبع الكميات، التواريخ، ومواقع الرفوف</p>
+            </div>
+            <div id="branchDisplay" style="font-weight: bold; color: var(--accent-color);">فرع: تحميل...</div>
+        </header>
+
+        <div class="grid-layout">
+            <div class="card">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="inventorySearch" placeholder="ابحث باسم الدواء أو الباركود..." oninput="filterInventory()">
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الدواء / الباركود</th>
+                                <th>الموقع (الرف)</th>
+                                <th>رقم التشغيلة (Batch)</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>الكمية</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📥 استلام بضاعة جديدة</div>
+                <form id="stockForm">
+                    <div class="form-group">
+                        <label>اختر الدواء</label>
+                        <select id="productSelect" class="form-control" required>
+                            <option value="">-- اختر من القائمة --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>الكمية المستلمة</label>
+                        <input type="number" id="qtyReceived" class="form-control" placeholder="0" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>رقم التشغيلة (Batch No.)</label>
+                        <input type="text" id="batchNo" class="form-control" placeholder="مثلاً: BT-9908" required>
+                    </div>
+                    <div class="form-group">
+                        <label>تاريخ الانتهاء (Expiry)</label>
+                        <input type="date" id="expiryDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>موقع الرف (Shelf Location)</label>
+                        <input type="text" id="shelfLoc" class="form-control" placeholder="مثلاً: A-15-Top" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-add" id="submitBtn">
+                        <span id="btnText">تحديث المخزون</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, increment, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP6FlbjAeUqut_79qW0T3rPSvfsjPdHfA",
+            authDomain: "gen-lang-client-0023266031.firebaseapp.com",
+            projectId: "gen-lang-client-0023266031",
+            storageBucket: "gen-lang-client-0023266031.firebasestorage.app",
+            messagingSenderId: "1052398695491",
+            appId: "1:1052398695491:web:1c29151c816929cdc510f6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2f881b3f-5867-4dfd-b360-c85f26c6ded4");
+        const auth = getAuth(app);
+
+        let products = [];
+        let inventoryItems = [];
+        let sessionData = JSON.parse(sessionStorage.getItem('pharmacy_session'));
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && sessionData) {
+                document.getElementById('branchDisplay').textContent = `الفرع: ${sessionData.branchId}`;
+                loadData();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadData() {
+            // 1. جلب قائمة الأدوية الأساسية لملء الـ Select
+            const pSnap = await getDocs(collection(db, "products"));
+            const pSelect = document.getElementById('productSelect');
+            pSelect.innerHTML = '<option value="">-- اختر من القائمة --</option>';
+            products = [];
+            pSnap.forEach(doc => {
+                const data = doc.data();
+                products.push({ id: doc.id, ...data });
+                pSelect.innerHTML += `<option value="${doc.id}">${data.name} (${data.barcode})</option>`;
+            });
+
+            // 2. جلب مخزون الفرع الحالي
+            const invSnap = await getDocs(collection(db, "branches", sessionData.branchId, "inventory"));
+            inventoryItems = [];
+            const tableBody = document.getElementById('inventoryTableBody');
+            tableBody.innerHTML = '';
+
+            invSnap.forEach(d => {
+                const item = d.data();
+                const prodInfo = products.find(p => p.id === d.id) || { name: "غير معروف", barcode: "---" };
+                inventoryItems.push({ id: d.id, ...item, ...prodInfo });
+                
+                const statusClass = item.stock_level < 10 ? 'status-low' : 'status-good';
+                const statusText = item.stock_level < 10 ? 'نقص مخزون' : 'متوفر';
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td><b>${prodInfo.name}</b><br><small>${prodInfo.barcode}</small></td>
+                        <td><span style="color:var(--accent-color)">${item.shelf_location || '---'}</span></td>
+                        <td>${item.batch_number || '---'}</td>
+                        <td>${item.expiry_date || '---'}</td>
+                        <td><b style="font-size:16px;">${item.stock_level}</b></td>
+                        <td><span class="stock-badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 3. معالجة إضافة المخزون (Update Stock)
+        document.getElementById('stockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            
+            const productId = document.getElementById('productSelect').value;
+            const qty = parseInt(document.getElementById('qtyReceived').value);
+            const batch = document.getElementById('batchNo').value;
+            const expiry = document.getElementById('expiryDate').value;
+            const location = document.getElementById('shelfLoc').value;
+
+            submitBtn.disabled = true;
+            btnText.textContent = "جاري التحديث...";
+
+            try {
+                // المرجح في Firebase: نحدث مخزون الفرع المحدد
+                const stockRef = doc(db, "branches", sessionData.branchId, "inventory", productId);
+                
+                // استخدام setDoc مع merge لتحديث أو إنشاء السجل
+                await setDoc(stockRef, {
+                    stock_level: increment(qty),
+                    batch_number: batch,
+                    expiry_date: expiry,
+                    shelf_location: location,
+                    last_updated: serverTimestamp()
+                }, { merge: true });
+
+                alert("تم تحديث المخزون بنجاح!");
+                document.getElementById('stockForm').reset();
+                loadData(); // إعادة تحميل الجدول
+
+            } catch (err) {
+                alert("حدث خطأ: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = "تحديث المخزون";
+            }
+        });
+
+        // 4. بحث محلي في الجدول
+        window.filterInventory = function() {
+            const val = document.getElementById('inventorySearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#inventoryTableBody tr');
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(val) ? '' : 'none';
+            });
+        };
+
+        window.logout = () => { sessionStorage.clear(); window.location.href = 'login.html'; };
+        function serverTimestamp() { return new Date(); }
+    </script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
