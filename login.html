@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - نظام إدارة الصيدليات</title>
+    <style>
+        /* --- متغيرات الألوان والتصميم (دعم الوضع الفاتح والداكن) --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            --surface-color: rgba(255, 255, 255, 0.4);
+            --border-color: rgba(255, 255, 255, 0.5);
+            --text-primary: #1d1d1f;
+            --text-secondary: #515154;
+            --accent-color: #007aff;
+            --danger-color: #ff3b30;
+            --input-bg: rgba(255, 255, 255, 0.6);
+            --glass-blur: blur(25px);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-gradient: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+                --surface-color: rgba(30, 30, 30, 0.4);
+                --border-color: rgba(255, 255, 255, 0.1);
+                --text-primary: #f5f5f7;
+                --text-secondary: #a1a1a6;
+                --input-bg: rgba(0, 0, 0, 0.3);
+                --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        /* --- الإعدادات الأساسية --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { 
+            background: var(--bg-gradient); 
+            color: var(--text-primary); 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+
+        /* --- تصميم حاوية تسجيل الدخول (Glassmorphism Card) --- */
+        .login-card {
+            background: var(--surface-color);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+            border-radius: 32px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header { margin-bottom: 40px; }
+        .login-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .login-header p { font-size: 15px; color: var(--text-secondary); }
+
+        /* --- تصميم النماذج (Forms) --- */
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 8px; font-weight: 500; color: var(--text-primary); }
+        
+        .form-control {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.2);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        @media (prefers-color-scheme: dark) {
+            .form-control:focus { background: rgba(0, 0, 0, 0.5); }
+        }
+
+        /* --- تصميم الأزرار --- */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: none;
+            background: var(--accent-color);
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.3s;
+            margin-top: 10px;
+        }
+        .btn-submit:active { transform: scale(0.97); }
+        .btn-submit:disabled { background: #99c6f9; cursor: not-allowed; }
+
+        /* --- رسائل الخطأ --- */
+        .error-message {
+            color: var(--danger-color);
+            font-size: 14px;
+            margin-top: 15px;
+            min-height: 20px;
+            font-weight: 500;
+        }
+
+        /* Loader Animation */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            display: none; /* مخفي افتراضياً */
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <main class="login-card">
+        <header class="login-header">
+            <h1>PharmaCloud PMS</h1>
+            <p>سجل الدخول للوصول إلى مساحة العمل الخاصة بك</p>
+        </header>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">البريد الإلكتروني</label>
+                <input type="email" id="email" class="form-control" placeholder="admin@pharmacloud.com" required autocomplete="email" autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <span id="btnText">تسجيل الدخول</span>
+                <span id="btnLoader" class="loader"></span>
+            </button>
+
+            <div id="errorMessage" class="error-message"></div>
+        </form>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. إعدادات Firebase الخاصة بك (استبدلها ببيانات مشروعك الحقيقية)
+const firebaseConfig = {
+  apiKey: "AIzaSyDP6FlbjAeUqut_79qW0T3rPSvfsjPdHfA",
+  authDomain: "gen-lang-client-0023266031.firebaseapp.com",
+  projectId: "gen-lang-client-0023266031",
+  storageBucket: "gen-lang-client-0023266031.firebasestorage.app",
+  messagingSenderId: "1052398695491",
+  appId: "1:1052398695491:web:1c29151c816929cdc510f6"
+};
+        // 2. تهيئة خدمات Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 3. تعريف عناصر الواجهة (DOM Elements)
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const errorMsg = document.getElementById('errorMessage');
+
+        // 4. معالجة إرسال النموذج (Submit Event)
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // منع إعادة تحميل الصفحة
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // تغيير حالة الزر إلى "جاري التحميل" لمنع الضغط المزدوج
+            setLoadingState(true);
+
+            try {
+                // الخطوة الأولى: التحقق من هوية المستخدم (Authentication)
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // الخطوة الثانية: جلب بيانات المستخدم وصلاحياته من قاعدة البيانات (Firestore)
+                // نحن بحاجة للـ branchId و الـ role حتى يعمل النظام السحابي بشكل صحيح
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+
+                    // الخطوة الثالثة: حفظ بيانات الجلسة (Session) محلياً للتنقل السريع بين الصفحات
+                    const sessionData = {
+                        uid: user.uid,
+                        name: userData.name,
+                        role: userData.role, // مثلاً: ADMIN أو CASHIER
+                        branchId: userData.branchId // لمعرفة لأي فرع ينتمي الموظف
+                    };
+                    
+                    // استخدام sessionStorage لأنه يمسح البيانات عند إغلاق المتصفح (أمان أعلى)
+                    sessionStorage.setItem('pharmacy_session', JSON.stringify(sessionData));
+
+                    // توجيه المستخدم حسب صلاحيته
+                    if(userData.role === 'ADMIN') {
+                         window.location.href = 'dashboard.html';
+                    } else {
+                         window.location.href = 'pos.html';
+                    }
+
+                } else {
+                    throw new Error("بيانات المستخدم غير موجودة في قاعدة البيانات. تواصل مع الإدارة.");
+                }
+
+            } catch (error) {
+                // معالجة الأخطاء الشائعة وعرض رسالة بالعربية للمستخدم
+                let friendlyMessage = "حدث خطأ غير متوقع. حاول مرة أخرى.";
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                    friendlyMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    friendlyMessage = "تم حظر الحساب مؤقتاً بسبب كثرة المحاولات.";
+                } else if (error.message) {
+                    friendlyMessage = error.message; // رسالة الخطأ المخصصة التي كتبناها فوق
+                }
+                
+                errorMsg.textContent = friendlyMessage;
+                setLoadingState(false);
+            }
+        });
+
+        // دالة مساعدة لتغيير حالة زر الإرسال
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                btnText.style.display = 'none';
+                btnLoader.style.display = 'inline-block';
+                errorMsg.textContent = ''; // مسح أي أخطاء سابقة
+            } else {
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline-block';
+                btnLoader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
