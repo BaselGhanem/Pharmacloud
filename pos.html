@@ -132,6 +132,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // 🔴 استيراد مكتبة المصادقة (Auth) الضرورية للسماح لك بالقراءة من قاعدة البيانات
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // 1. التحقق من الجلسة
         const sessionStr = sessionStorage.getItem('pharmacy_session');
@@ -149,32 +151,44 @@
             appId: "1:1052398695491:web:1c29151c816929cdc510f6"
         };
         const app = initializeApp(firebaseConfig);
-        
-        // 🔴 الحل السحري لمشكلة الـ Offline هنا 🔴
         const db = getFirestore(app, "ai-studio-2f881b3f-5867-4dfd-b360-c85f26c6ded4");
+        const auth = getAuth(app); // 🔴 تفعيل المصادقة
 
         // 3. حالة التطبيق (الكتالوج المحلي وسلة المشتريات)
         let cart = [];
-        let catalog = []; // سنحفظ كل الأدوية هنا لسرعة البحث
+        let catalog = []; 
 
-        // 4. تحميل الكتالوج مرة واحدة عند فتح الصفحة (Local Caching)
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        // 4. تحميل الكتالوج مرة واحدة عند فتح الصفحة 
         async function loadCatalog() {
             try {
+                searchInput.placeholder = "جاري تحميل الأدوية من قاعدة البيانات...";
                 const querySnapshot = await getDocs(collection(db, "products"));
                 querySnapshot.forEach((doc) => {
                     catalog.push({ id: doc.id, ...doc.data() });
                 });
                 console.log("تم تحميل الكتالوج بنجاح:", catalog.length, "منتج");
+                searchInput.placeholder = `تم تحميل ${catalog.length} منتج! ابحث بالاسم، الباركود، أو امسح (F2)...`;
             } catch (error) {
                 console.error("خطأ في تحميل الكتالوج:", error);
+                searchInput.placeholder = "خطأ في الاتصال بقاعدة البيانات!";
             }
         }
-        loadCatalog(); // استدعاء الدالة فوراً
 
-        // 5. محرك البحث التفاعلي (يقرأ من الكتالوج المحلي بسرعة فائقة)
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
+        // 🔴 التحقق من حالة تسجيل الدخول من سيرفرات Firebase قبل تحميل الأدوية
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // المستخدم مسجل دخوله فعلياً في Firebase، قم بتحميل الكتالوج الآن
+                loadCatalog(); 
+            } else {
+                // الجلسة منتهية، إعادته لصفحة الدخول
+                window.location.href = 'login.html'; 
+            }
+        });
 
+        // 5. محرك البحث التفاعلي 
         searchInput.addEventListener('input', function() {
             const val = this.value.trim().toLowerCase();
             searchResults.innerHTML = '';
@@ -244,7 +258,7 @@
             }
         }
 
-        // 8. تحديث وحذف العناصر ورسم السلة (مع إظهار الرف)
+        // 8. تحديث وحذف العناصر ورسم السلة 
         window.updateQty = function(barcode, newQty) {
             const item = cart.find(item => item.barcode === barcode);
             if (item) { item.qty = parseInt(newQty) || 1; renderCart(); }
@@ -263,7 +277,7 @@
                 const itemTotal = item.price * item.qty;
                 subtotal += itemTotal;
                 itemsCount += item.qty;
-                const loc = item.location || 'غير محدد'; // سحب مكان الرف
+                const loc = item.location || 'غير محدد'; 
 
                 container.innerHTML += `
                     <div class="item-row">
@@ -334,6 +348,7 @@
                 };
                 await addDoc(collection(db, "sales"), invoiceData);
                 cart = []; renderCart(); searchInput.focus();
+                alert("تم حفظ الفاتورة بنجاح!");
             } catch (error) {
                 alert("حدث خطأ: " + error.message);
             } finally {
@@ -341,7 +356,12 @@
             }
         }
 
-        window.logout = function() { sessionStorage.removeItem('pharmacy_session'); window.location.href = 'login.html'; }
+        // 12. تسجيل الخروج
+        window.logout = function() { 
+            sessionStorage.removeItem('pharmacy_session'); 
+            auth.signOut().then(() => { window.location.href = 'login.html'; });
+        }
+        
         function playBeep() { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.connect(ctx.destination); osc.frequency.value = 900; osc.start(); osc.stop(ctx.currentTime + 0.1); } catch(e) {} }
     </script>
 </body>
