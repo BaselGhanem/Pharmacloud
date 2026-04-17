@@ -239,27 +239,34 @@
         const searchResults = document.getElementById('searchResults');
 
         // 4. تحميل البيانات (الأدوية وشركات التأمين)
-        async function loadData() {
+async function loadData() {
             try {
-                // تحميل الأدوية
-                searchInput.placeholder = "جاري التحميل...";
+                // 1. تحميل الأدوية
+                searchInput.placeholder = "جاري تحميل الأدوية...";
                 const querySnapshot = await getDocs(collection(db, "products"));
+                catalog = []; // تصفير الكتالوج قبل التحميل
                 querySnapshot.forEach((doc) => { catalog.push({ id: doc.id, ...doc.data() }); });
-                searchInput.placeholder = `ابحث باسم الدواء أو الباركود...`;
+                searchInput.placeholder = `تم تحميل ${catalog.length} منتج! ابحث بالاسم أو الباركود...`;
 
-                // تحميل شركات التأمين
+                // 2. تحميل شركات التأمين (تأكد من كتابة اسم المجموعة صح: insurance_companies)
                 const insSelect = document.getElementById('insCompany');
                 const insSnap = await getDocs(collection(db, "insurance_companies"));
-                insSelect.innerHTML = '<option value="">-- اختر شركة التأمين --</option>';
-                insSnap.forEach(doc => {
-                    insSelect.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`;
-                });
+                
+                if (insSnap.empty) {
+                    insSelect.innerHTML = '<option value="">لا يوجد شركات تأمين مسجلة</option>';
+                } else {
+                    insSelect.innerHTML = '<option value="">-- اختر شركة التأمين --</option>';
+                    insSnap.forEach(doc => {
+                        const data = doc.data();
+                        insSelect.innerHTML += `<option value="${doc.id}">${data.name}</option>`;
+                    });
+                }
             } catch (error) {
-                console.error("خطأ:", error);
-                searchInput.placeholder = "خطأ في الاتصال بقاعدة البيانات!";
+                console.error("خطأ في تحميل البيانات:", error);
+                // إذا ظهر لك هذا التنبيه، يعني المشكلة في الـ Rules
+                alert("خطأ في جلب شركات التأمين: تأكد من إضافتها في Firebase بالاسم الصحيح insurance_companies");
             }
         }
-
         onAuthStateChanged(auth, (user) => {
             if (user) loadData(); 
             else window.location.href = 'login.html'; 
