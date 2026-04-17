@@ -178,8 +178,7 @@ const firebaseConfig = {
         // 2. تهيئة خدمات Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
-
+        const db = getFirestore(app, "ai-studio-2f881b3f-5867-4dfd-b360-c85f26c6ded4");
         // 3. تعريف عناصر الواجهة (DOM Elements)
         const loginForm = document.getElementById('loginForm');
         const emailInput = document.getElementById('email');
